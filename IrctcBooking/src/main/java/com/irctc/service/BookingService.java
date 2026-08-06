@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.irctc.client.PaymentClient;
 import com.irctc.entity.PaymentEntity;
 import com.irctc.entity.TicketEntity;
 import com.irctc.exception.InsufficientBalanceException;
@@ -22,13 +23,16 @@ public class BookingService {
 	private final BookingRepository bookingRepository;
 	private final TicketEntityMapper ticketEntityMapper;
 	private final PaymentRepository paymentRepository;
+	private final PaymentClient paymentClient;
 	
 	public BookingService(BookingRepository bookingRepository, 
 			TicketEntityMapper ticketEntityMapper,
-			PaymentRepository paymentRepository) {
+			PaymentRepository paymentRepository,
+			PaymentClient paymentClient) {
 		this.bookingRepository = bookingRepository;
 		this.ticketEntityMapper = ticketEntityMapper;
 		this.paymentRepository = paymentRepository;
+		this.paymentClient = paymentClient;
 	}
 	
 	@Transactional
@@ -36,21 +40,28 @@ public class BookingService {
 		TicketEntity tt =ticketEntityMapper.bookingReqToTicketEntityMapper(req);
 		bookingRepository.save(tt);
 		
-		PaymentEntity pEnt = new PaymentEntity();
-		pEnt.setAmount(500);
-		pEnt.setBookingId(tt.getBookingId());
-		pEnt.setTransactionId("TXN"+getPnr());
+//		PaymentEntity pEnt = new PaymentEntity();
+//		pEnt.setAmount(500);
+//		pEnt.setBookingId(tt.getBookingId());
+//		pEnt.setTransactionId("TXN"+getPnr());
 		
 //		triggerAbruptCrash(); // comment out for happy flow
 		
-		paymentRepository.save(pEnt);
+//		paymentRepository.save(pEnt);
+		
+		PaymentEntity pEnt = paymentClient.makePayment(getRandomAmount(), tt.getBookingId());
 		if(pEnt.getPaymentId() > 0)
 			tt.setPnr(getPnr());
+		else throw new RuntimeException("Payment failed in paymentService");
 		
 		TicketEntity savedEntity = bookingRepository.save(tt);
 		System.out.println("saveEnt is "+ savedEntity.toString());
 		
 		return savedEntity;
+	}
+	
+	public Integer getRandomAmount() {
+		return getPnr();
 	}
 	
 	public Integer getPnr() {
