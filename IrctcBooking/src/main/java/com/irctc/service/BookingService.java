@@ -17,6 +17,8 @@ import com.irctc.repository.BookingRepository;
 import com.irctc.repository.PaymentRepository;
 import com.irctc.request.BookingRequest;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 @Service
 public class BookingService {
 	
@@ -35,7 +37,7 @@ public class BookingService {
 		this.paymentClient = paymentClient;
 	}
 	
-	@Transactional
+	@CircuitBreaker(name = "paymentServiceCB", fallbackMethod = "paymentFallback")
 	public TicketEntity bookTicket(BookingRequest req) {
 		TicketEntity tt =ticketEntityMapper.bookingReqToTicketEntityMapper(req);
 		bookingRepository.save(tt);
@@ -59,6 +61,19 @@ public class BookingService {
 		
 		return savedEntity;
 	}
+	
+	public TicketEntity paymentFallback(BookingRequest req, Throwable throwable) {
+//        log.error("Circuit Breaker OPEN or Payment Service Failed! Cause: {}", throwable.getMessage());
+//        log.info("Executing alternative route / business logic for PNR: {}", pnr);
+
+        // Fallback strategy: Asynchronous queuing via Kafka / Offline processing
+//        sendToKafkaFallbackQueue(pnr, amount);
+
+//        return "Payment Service is currently unavailable. Your booking request for PNR " 
+//                 + " has been received and queued for background confirmation.";
+		
+		return new TicketEntity();
+    }
 	
 	public Integer getRandomAmount() {
 		return getPnr();
