@@ -1,0 +1,29 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: api-gateway          # Lowercase (Spring Boot convention)
+  cloud:
+    gateway:
+      routes:
+        - id: booking-service-route
+          uri: lb://BOOKING-SERVICE    # Uppercase (Eureka registry lookup key)
+          predicates:
+            - Path=/irctc/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 5
+                key-resolver: "#{@ipKeyResolver}"
+
+        - id: payment-service-route
+          uri: lb://PAYMENT-SERVICE    # Uppercase (Eureka registry lookup key)
+          predicates:
+            - Path=/pay/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
