@@ -3,6 +3,8 @@ package com.irctc.service;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,8 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @Service
 public class BookingService {
+	
+	private static final Logger log = LoggerFactory.getLogger(BookingService.class);
 	
 	private final BookingRepository bookingRepository;
 	private final TicketEntityMapper ticketEntityMapper;
@@ -51,6 +55,9 @@ public class BookingService {
 		
 //		paymentRepository.save(pEnt);
 		
+		log.info("TicketBookingService::before making the call to payment service for "+ req.getPassengerName()
+		+ " "+ tt.getBookingId());
+		
 		PaymentEntity pEnt = paymentClient.makePayment(getRandomAmount(), tt.getBookingId());
 		if(pEnt.getPaymentId() > 0)
 			tt.setPnr(getPnr());
@@ -58,6 +65,8 @@ public class BookingService {
 		
 		TicketEntity savedEntity = bookingRepository.save(tt);
 		System.out.println("saveEnt is "+ savedEntity.toString());
+		
+		log.info("TicketBookingService:: payment successful for "+req.getPassengerName()+ " "+ tt.getBookingId());
 		
 		return savedEntity;
 	}
