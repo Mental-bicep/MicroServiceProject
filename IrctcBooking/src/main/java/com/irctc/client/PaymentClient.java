@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.irctc.entity.PaymentEntity;
 
-@FeignClient(name = "PaymentService") // name as per eureka, app.yml both works fine
+@FeignClient(name = "payment-service") 
 public interface PaymentClient {
 	@PostMapping("/pay")
 	PaymentEntity makePayment(@RequestParam("amount") Integer amount, @RequestParam("bookingId") Integer bookingId);
